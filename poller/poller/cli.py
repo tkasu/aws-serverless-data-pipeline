@@ -1,8 +1,8 @@
 import logging
 import os
 from datetime import datetime
-from api.fs import save_as_json
-from api.mars_api import fetch_weather
+from poller.fs import save_as_json
+from poller.mars_api import fetch_weather
 
 
 EXPORT_DIR = "../data/raw/"
