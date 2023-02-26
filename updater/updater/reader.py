@@ -1,8 +1,8 @@
 import os
+import json
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd  # type: ignore
 import polars as pl
 
 
@@ -11,7 +11,9 @@ INPUT_FILENAME = "github_commit_stats.json"
 DAY_INDEX_COL_NAME = "day_index"
 HOUR_INDEX_COL_NAME = "hour_index"
 COMMIT_COUNT_COL_NAME = "commit_count"
-JSON_COLUMNS = [DAY_INDEX_COL_NAME, HOUR_INDEX_COL_NAME, COMMIT_COUNT_COL_NAME]
+DAY_INDEX_COL_IDX = 0
+HOUR_INDEX_COL_IDX = 1
+COMMIT_COUNT_COL_IDX = 2
 PATH_REPO_INDEX = 0
 PATH_USER_INDEX = 1
 PATH_DAY_INDEX = 2
@@ -24,8 +26,15 @@ def get_dir_name_from_index(path: Path, idx: int) -> str:
 
 
 def read_new_json(path: Path) -> pl.DataFrame:
-    df = pl.from_pandas(pd.read_json(path))
-    df.columns = JSON_COLUMNS
+    with open(path, "r") as file:
+        data = json.loads(file.read())
+
+    data_columnar = {
+        DAY_INDEX_COL_NAME: [row[DAY_INDEX_COL_IDX] for row in data],
+        HOUR_INDEX_COL_NAME: [row[HOUR_INDEX_COL_IDX] for row in data],
+        COMMIT_COUNT_COL_NAME: [row[COMMIT_COUNT_COL_IDX] for row in data],
+    }
+    df = pl.from_dict(data_columnar)
 
     repo = get_dir_name_from_index(path, PATH_REPO_INDEX)
     user = get_dir_name_from_index(path, PATH_USER_INDEX)
