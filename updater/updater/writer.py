@@ -1,6 +1,6 @@
-import pyarrow as pa
+import pyarrow as pa  # type: ignore
 import polars as pl
-from deltalake.writer import write_deltalake
+from deltalake.writer import write_deltalake  # type: ignore
 from updater.logger import logger
 
 OUTPUT_DELTA_PATH = "../data/processed/gh_hourly_stats"
