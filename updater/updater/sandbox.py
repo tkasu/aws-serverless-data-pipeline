@@ -14,14 +14,12 @@ print(hourly_commits_df)
 
 total_commits: pl.DataFrame = (
     hourly_commits_df.groupby(by=["fetch_date", "user", "repo"])
-    .agg([pl.count().alias("commit_count")])
+    .agg([pl.sum("commit_count").alias("commit_count")])
+    # sort needed to shift_and_fill to work correctly
+    .sort(["user", "repo", "fetch_date"])
     .with_columns(
         [
-            pl.col("commit_count")
-            .shift_and_fill(1, 0)
-            .sort_by("fetch_date")
-            .over(["user", "repo"])
-            .alias("prev_date_commits"),
+            pl.col("commit_count").shift_and_fill(1, 0).over(["user", "repo"]).alias("prev_date_commits"),
         ]
     )
     .with_columns([(pl.col("commit_count") - pl.col("prev_date_commits")).alias("new_commits")])

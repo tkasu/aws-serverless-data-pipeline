@@ -12,12 +12,13 @@ def get_daily_new_commits_df(df: pl.LazyFrame) -> pl.LazyFrame:
     return (
         df.filter(pl.col("commit_count") > 0)
         .groupby(by=["fetch_date", "user", "repo"])
-        .agg([pl.count().alias("commit_count")])
+        .agg([pl.sum("commit_count").alias("commit_count")])
+        # sort needed to shift_and_fill to work correctly
+        .sort(["user", "repo", "fetch_date"])
         .with_columns(
             [
                 pl.col("commit_count")
                 .shift_and_fill(1, 0)
-                .sort_by("fetch_date")
                 .over(["user", "repo"])
                 .alias("prev_date_commits"),
             ]
@@ -49,9 +50,7 @@ def daily_commits_repo(user: str, repo: str):
     commits_df = pl.scan_delta(DELTA_PATH)
     daily_commits_df = (
         get_daily_new_commits_df(
-            commits_df
-            .filter(pl.col("user") == user)
-            .filter(pl.col("repo") == repo)
+            commits_df.filter(pl.col("user") == user).filter(pl.col("repo") == repo)
         )
         .drop(["user", "repo"])
         .collect()
