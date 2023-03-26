@@ -1,9 +1,7 @@
 import flask
 import polars as pl
 
-
-DELTA_PATH = "../data/processed/gh_hourly_stats"
-
+from api.delta import DELTA_PATH, delta_storage_options
 
 APP = flask.Flask(__name__)
 
@@ -47,7 +45,9 @@ def daily_commits():
 
 @APP.route("/daily_commits/<user>/<repo>")
 def daily_commits_repo(user: str, repo: str):
-    commits_df = pl.scan_delta(DELTA_PATH)
+    commits_df = pl.scan_delta(
+        DELTA_PATH, storage_options=delta_storage_options(DELTA_PATH)
+    )
     daily_commits_df = (
         get_daily_new_commits_df(
             commits_df.filter(pl.col("user") == user).filter(pl.col("repo") == repo)
