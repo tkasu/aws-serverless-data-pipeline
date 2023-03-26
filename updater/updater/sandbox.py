@@ -1,9 +1,8 @@
 import polars as pl
 
+from updater.delta import delta_storage_options, OUTPUT_DELTA_PATH
 
-OUTPUT_DELTA_PATH = "../data/processed/gh_hourly_stats"
-
-commits_df = pl.scan_delta(OUTPUT_DELTA_PATH)
+commits_df = pl.scan_delta(OUTPUT_DELTA_PATH, storage_options=delta_storage_options(OUTPUT_DELTA_PATH))
 hourly_commits_df: pl.DataFrame = (
     commits_df.filter(pl.col("commit_count") > 0)
     .sort(["fetch_date", "user", "repo", "day_index", "hour_index"])
