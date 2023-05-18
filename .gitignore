@@ -2,3 +2,4 @@ data/raw/**/*.json
 data/processed/**/*.parquet
 data/processed/**/*.json
 data/processed/**/_delta_log
+.aws-sam/
