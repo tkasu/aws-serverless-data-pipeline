@@ -30,6 +30,6 @@ See READMEs in:
 
 Ready:
 
-[x] Poller Lambda
-[ ] Updater Lambda
-[ ] API Lambda
+- [x] Poller Lambda
+- [ ] Updater Lambda
+- [ ] API Lambda
