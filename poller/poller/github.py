@@ -15,7 +15,11 @@ def get_api_key():
     try:
         return os.environ["API_KEY"]
     except KeyError:
-        return parameters.get_parameter("poller-github-api-key", max_age=7200, decrypt=True)
+        try:
+            param_name = os.environ["PARAM_STORE_API_KEY_NAME"]
+            return parameters.get_parameter(param_name, max_age=7200, decrypt=True)
+        except KeyError:
+            raise KeyError("Could not find API_KEY or PARAM_STORE_API_KEY_NAME")
 
 
 def fetch_commit_stats(user: str, repo: str) -> Dict:

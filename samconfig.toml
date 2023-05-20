@@ -1,8 +1,8 @@
 version = 0.1
 [default.deploy.parameters]
-stack_name = "aws-kerho-demo-tkasu-poller"
+stack_name = "tkasu-aws-serverless-data-pipeline"
 resolve_s3 = true
-s3_prefix = "aws-kerho-demo-tkasu-poller"
+s3_prefix = "tkasu-aws-serverless-data-pipeline"
 region = "eu-west-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"

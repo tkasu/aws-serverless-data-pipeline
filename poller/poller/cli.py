@@ -5,20 +5,11 @@ from poller.fs import save_as_json
 from poller.github import fetch_commit_stats
 
 
-# EXPORT_DIR = "../data/raw/"
-EXPORT_DIR = "s3://ew1-dev-awskerho-tomi-data/data/raw/"
+EXPORT_DIR = os.environ["EXPORT_DIR"]
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-
-REPOS_TO_FETCH = [
-    ("tkasu", "aws-kerho-serverless-demo"),
-    ("badboogey", "AWS_demo"),
-    ("jkainu", "stock-visualizer"),
-]
+# Expect format like:
+# tkasu:aws-kerho-serverless-demo,other_username:other_repo
+REPOS_TO_FETCH = [repo.split(":") for repo in os.environ["REPOS_TO_FETCH"].split(",")]
 
 
 def get_export_path(user: str, repo: str) -> str:
@@ -35,17 +26,24 @@ def get_export_path(user: str, repo: str) -> str:
     )
 
 
-def fetch_repo(user: str, repo: str):
-    logging.info(f"Starting GitHub commit statistics fetch for {user}/{repo}")
+def fetch_repo(user: str, repo: str, logger):
+    logger.info(f"Starting GitHub commit statistics fetch for {user}/{repo}")
     stats = fetch_commit_stats(user, repo)
     export_path = get_export_path(user, repo)
     save_as_json(stats, export_path)
-    logging.info(f"Saved commits stats data to {export_path}.")
+    logger.info(f"Saved commits stats data to {export_path}.")
 
 
 def main():
+    logging.basicConfig(
+        format="%(asctime)s %(levelname)-8s %(message)s",
+        level=logging.INFO,
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    logger = logging.getLogger(__name__)
+
     for user, repo in REPOS_TO_FETCH:
-        fetch_repo(user, repo)
+        fetch_repo(user, repo, logger)
 
 
 if __name__ == "__main__":

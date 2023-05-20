@@ -17,8 +17,20 @@ Resources:
       Runtime: python3.9
       Architectures:
         - arm64
+      Environment:
+        Variables:
+          EXPORT_DIR: s3://ew1-dev-awskerho-tomi-data/data/raw/
+          REPOS_TO_FETCH: tkasu:aws-kerho-serverless-demo,badboogey:AWS_demo,jkainu:stock-visualizer
+          PARAM_STORE_API_KEY_NAME: poller-github-api-key
+          POWERTOOLS_SERVICE_NAME: poller
+          LOG_LEVEL: INFO
       Policies:
         - S3FullAccessPolicy:
             BucketName: ew1-dev-awskerho-tomi-data
         - SSMParameterReadPolicy:
             ParameterName: poller-github-api-key
+      Events:
+        CloudWatchEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 day)
