@@ -31,5 +31,5 @@ See READMEs in:
 Ready:
 
 - [x] Poller Lambda
-- [ ] Updater Lambda
+- [x] Updater Lambda
 - [ ] API Lambda

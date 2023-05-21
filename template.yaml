@@ -1,32 +1,46 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Poller
+  Serverless Github statistics data pipeline
+
+Parameters:
+  DataBucketName:
+    Type: String
+    Default: github-statistics-data
 
 Globals:
   Function:
-    Timeout: 30
-    MemorySize: 128
+    Architectures:
+      - arm64
 
 Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref DataBucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
   PollerFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: poller/
       Handler: poller.handle.handler
+      Timeout: 30
+      MemorySize: 128
       Runtime: python3.9
-      Architectures:
-        - arm64
       Environment:
         Variables:
-          EXPORT_DIR: s3://ew1-dev-awskerho-tomi-data/data/raw/
+          EXPORT_DIR: !Sub "s3://${DataBucketName}/data/raw/"
           REPOS_TO_FETCH: tkasu:aws-kerho-serverless-demo,badboogey:AWS_demo,jkainu:stock-visualizer
           PARAM_STORE_API_KEY_NAME: poller-github-api-key
           POWERTOOLS_SERVICE_NAME: poller
           LOG_LEVEL: INFO
       Policies:
         - S3FullAccessPolicy:
-            BucketName: ew1-dev-awskerho-tomi-data
+            BucketName: !Ref DataBucketName
         - SSMParameterReadPolicy:
             ParameterName: poller-github-api-key
       Events:
@@ -34,3 +48,47 @@ Resources:
           Type: Schedule
           Properties:
             Schedule: rate(1 day)
+
+  UpdaterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Timeout: 60
+      MemorySize: 512
+      ReservedConcurrentExecutions: 1  # Delta is not configured for concurrent updates atm
+      Environment:
+        Variables:
+          OUTPUT_DELTA_PATH: !Sub "s3://${DataBucketName}/data/processed/gh_hourly_stats"
+          POWERTOOLS_SERVICE_NAME: updater
+          LOG_LEVEL: INFO
+      Policies:
+        - S3FullAccessPolicy:
+            BucketName: !Ref DataBucketName
+      Events:
+        FileUpload:
+          Type: S3
+          Properties:
+            Bucket: !Ref DataBucket
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: 'data/raw/'
+                  - Name: suffix
+                    Value: "/github_commit_stats.json"
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: updater/
+
+  # Required for S3 events to work: https://github.com/aws/serverless-application-model/issues/300
+  UpdaterBucketConnector:
+    Type: AWS::Serverless::Connector
+    Properties:
+      Source:
+        Type: AWS::S3::Bucket
+        Arn: !Sub arn:${AWS::Partition}:s3:::${DataBucketName}
+      Destination:
+        Id: UpdaterFunction
+      Permissions:
+        - Write

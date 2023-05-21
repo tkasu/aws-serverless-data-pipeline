@@ -2,11 +2,13 @@ import os
 import json
 from datetime import datetime
 from pathlib import Path
+from typing import Union, Dict
+from urllib.parse import urlparse
 
+import boto3
 import polars as pl
 
 
-INPUT_FOLDER = Path("../data/raw")
 INPUT_FILENAME = "github_commit_stats.json"
 DAY_INDEX_COL_NAME = "day_index"
 HOUR_INDEX_COL_NAME = "hour_index"
@@ -25,9 +27,23 @@ def get_dir_name_from_index(path: Path, idx: int) -> str:
     return path.parents[idx].name
 
 
-def read_new_json(path: Path) -> pl.DataFrame:
-    with open(path, "r") as file:
-        data = json.loads(file.read())
+def read_json(path: Union[str, Path]) -> pl.DataFrame:
+    if str(path).startswith("s3://"):
+        s3_path_parsed = urlparse(str(path), allow_fragments=False)
+        s3 = boto3.resource("s3")
+        data = json.loads(
+            s3.Bucket(s3_path_parsed.netloc)
+            .Object(s3_path_parsed.path.lstrip("/"))
+            .get()
+            .get("Body")
+            .read()  # type: ignore
+            .decode()
+        )
+    else:
+        with open(path, "r") as file:
+            data = json.loads(file.read())
+
+    path = Path(path)
 
     data_columnar = {
         DAY_INDEX_COL_NAME: [row[DAY_INDEX_COL_IDX] for row in data],
@@ -53,10 +69,10 @@ def read_new_json(path: Path) -> pl.DataFrame:
     return df
 
 
-def resolve_path(date: datetime, repo: str, user: str) -> Path:
+def resolve_path(folder: Path, date: datetime, repo: str, user: str) -> Path:
     return Path(
         os.path.join(
-            INPUT_FOLDER,
+            folder,
             str(date.year),
             str(date.month),
             str(date.day),

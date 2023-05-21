@@ -4,7 +4,7 @@ import polars as pl
 from deltalake.writer import write_deltalake  # type: ignore
 
 from updater.delta import delta_storage_options, OUTPUT_DELTA_PATH
-from updater.logger import logger
+from updater.logger import get_logger
 
 
 ARROW_SCHEMA = pa.schema(
@@ -21,7 +21,7 @@ ARROW_SCHEMA = pa.schema(
 
 def write_to_delta(df: pl.DataFrame):
     if _check_if_data_exist(df):
-        logger().warning("Data existing already for given date, user, repo. Skipping update.")
+        get_logger().warning("Data existing already for given date, user, repo. Skipping update.")
         return
     df_arrow: pa.Table = df.to_arrow().cast(ARROW_SCHEMA)
     write_deltalake(

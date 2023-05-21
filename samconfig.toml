@@ -6,4 +6,5 @@ s3_prefix = "tkasu-aws-serverless-data-pipeline"
 region = "eu-west-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-image_repositories = []
+image_repositories = ["UpdaterFunction=972829804869.dkr.ecr.eu-west-1.amazonaws.com/tkasuawsserverlessdatapipeline867fba1d/updaterfunction78c32005repo"]
+parameter_overrides = "DataBucketName=\"github-statistics-data\""
